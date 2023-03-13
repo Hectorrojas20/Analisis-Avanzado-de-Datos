@@ -297,4 +297,9 @@ regularizacion2 %>%
 ) 
 ```
 
+```{r}
+summary(data)
+) 
+```
+
 \`\`\`
