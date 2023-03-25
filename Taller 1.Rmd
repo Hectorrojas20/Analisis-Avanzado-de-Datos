@@ -33,6 +33,17 @@ install.packages("DataExplorer")
 install.packages("faraway")
 install.packages("ggplot")
 install.packages("ggplot2")
+install.packages("Metrics")
+install.packages("lme4")
+install.packages("plm")
+install.packages("dplyr")
+install.packages("rsq")
+install.packages("glmnet")
+
+library(Metrics)
+library(lme4)
+library(dplyr)
+library(rsq)
 
 ```
 
@@ -43,23 +54,10 @@ data
 
 ```{r}
 modelData <- data.frame(data[,2:5001])
-lmmodel <- lm(data$y ~ .,modelData)
-summary(lmmodel)
 ```
 
-```{r}
-print(head(modelData))
-```
 
-```{r}
-cor(data)
-```
-
-```{r}
-install.packages("glmnet")
-```
-
-Dado el analisis anterior podemos evidenciar que para este modelo existe perfecta multicolinealidad entre las variables
+Dado el analisis anterior y debido a que este modelo tiene más variables que observaciones es una clara fuente de multicolinealidad lo que es llamado un modelo sobredefinido.
 
 Punto 2:
 
@@ -84,10 +82,10 @@ x_train <- scale(x_train)
 x_test <- scale(x_test)
 ```
 
-Defniniendo los modelos Ridge y Lasso
+Definiendo los modelos Ridge y Lasso
 
 ```{r}
-ridge <- glmnet::glmnet(x_train, y_train, alpha = 0 )
+ridge <- glmnet::glmnet(x_train, y_train, alpha = 0  )
 lasso <- glmnet::glmnet(x_train, y_train, alpha = 1)
 ```
 
@@ -104,9 +102,11 @@ gráfico del Mean Square Error obtenido por validación cruzada para Lasso
 plot(lasso_cv)
 ```
 
+El mejor Lambda encontrado para Lasso es:
+
 ```{r}
-paste("Mejor valor de lambda encontrado:", lasso_cv$lambda.min)
-paste("Mejor valor de lambda encontrado + 1 desviación estándar:", lasso_cv$lambda.1se)
+paste("Mejor valor de lambda encontrado para Lasso:", lasso_cv$lambda.min)
+paste("Mejor valor de lambda encontrado para Lasso + 1 desviación estándar:", lasso_cv$lambda.1se)
 ```
 
 gráfico del Mean Square Error obtenido por validación cruzada para Ridge
@@ -115,25 +115,11 @@ gráfico del Mean Square Error obtenido por validación cruzada para Ridge
 plot(ridge_cv)
 ```
 
-```{r}
-paste("Mejor valor de lambda encontrado:", ridge_cv$lambda.min)
-paste("Mejor valor de lambda encontrado + 1 desviación estándar:", ridge_cv$lambda.1se)
-```
+El mejor Lambda encontrado para Ridge es:
 
 ```{r}
-
-#codigo temporal pendiente revisarlo y quitarlo de ser necesario
-ridge_pred <- predict(ridge_cv, newx = x_test, s = ridge_cv$lambda.min)
-lasso_pred <- predict(lasso_cv, newx = x_test, s = lasso_cv$lambda.min)
-ridge_ecm <- mean((ridge_pred - y_test)^2)
-lasso_ecm <- mean((lasso_pred - y_test)^2)
-```
-
-ECM de los modelos Ridge y Lasso
-
-```{r}
-ridge_ecm
-lasso_ecm
+paste("Mejor valor de lambda encontrado para ridge:", ridge_cv$lambda.min)
+paste("Mejor valor de lambda encontrado para ridge + 1 desviación estándar:", ridge_cv$lambda.1se)
 ```
 
 Evolución de los coeficientes en función de lambda
@@ -154,6 +140,9 @@ df_coeficientes_ridge %>%
 ```
 
 Evolución de los coeficientes en función de lambda
+
+
+
 
 ```{r}
 # Evolución de los coeficientes en función de lambda
@@ -183,7 +172,7 @@ regularizacion %>%
   theme(legend.position = "none")
 ```
 
-entrenamos nuevamente los modelos con los mayores valores de lambda encontrados
+entrenamos nuevamente los modelos con los mejores valores de lambda encontrados
 
 ```{r}
 ridge2 <- glmnet::glmnet(x_train, y_train, lambda = ridge_cv$lambda.1se, alpha = 0 )
@@ -198,7 +187,7 @@ predicciones_train <- predict(ridge2, newx = x_train)
 # MSE de entrenamiento
 # ==============================================================================
 training_mse <- mean((predicciones_train - y_train)^2)
-paste("Error (mse) de entrenamiento:", training_mse)
+paste("Error (mse) de entrenamiento para Ridge:", training_mse)
 ```
 
 ```{r}
@@ -209,7 +198,7 @@ predicciones_test <- predict(ridge2, newx = x_test)
 # MSE de test
 # ==============================================================================
 test_mse_ridge <- mean((predicciones_test - y_test)^2)
-paste("Error (mse) de test:", test_mse_ridge)
+paste("Error (mse) de test para Ridge:", test_mse_ridge)
 ```
 
 ```{r}
@@ -220,7 +209,7 @@ predicciones_train <- predict(lasso2, newx = x_train)
 # MSE de entrenamiento
 # ==============================================================================
 training_mse <- mean((predicciones_train - y_train)^2)
-paste("Error (mse) de entrenamiento:", training_mse)
+paste("Error (mse) de entrenamiento para Lasso:", training_mse)
 ```
 
 ```{r}
@@ -231,15 +220,19 @@ predicciones_test <- predict(lasso2, newx = x_test)
 # MSE de test
 # ==============================================================================
 test_mse_lasso <- mean((predicciones_test - y_test)^2)
-paste("Error (mse) de test:", test_mse_lasso)
+paste("Error (mse) de test para Lasso:", test_mse_lasso)
 ```
+
+El mejor modelo para datos de testing es Lasso ya que su ECM es mas bajo.
+
+identificando el número óptimo de componentes del modelo Ridge:
+
 
 ```{r}
 df_coeficientes_ridge2 <- coef(ridge2) %>%
                    as.matrix() %>%
                    as_tibble(rownames = "predictor") %>%
                    rename(coeficiente_ridge2 = s0)
-
 df_coeficientes_ridge2 %>%
   filter(predictor != "(Intercept)") %>%
   ggplot(aes(x = predictor, y = coeficiente_ridge2)) +
@@ -249,6 +242,8 @@ df_coeficientes_ridge2 %>%
   theme(axis.text.x = element_text(size = 6, angle = 45))
 ```
 
+
+
 ```{r}
 # Evolución de los coeficientes en función de lambda
 # ==============================================================================
@@ -256,28 +251,21 @@ regularizacion2 <- lasso2$beta %>%
                   as.matrix() %>%
                   t() %>% 
                   as_tibble() %>%
-                  mutate(lambda = lasso2$lambda)
+                  mutate(lambda2 = lasso2$lambda)
 
 regularizacion2 <- regularizacion2 %>%
                    pivot_longer(
-                     cols = !lambda, 
+                     cols = !lambda2, 
                      names_to = "predictor",
                      values_to = "coeficientes_lasso2"
                    )
 
 regularizacion2 %>%
-  ggplot(aes(x = lambda, y = coeficientes_lasso2, color = predictor)) +
-  geom_line() +
-  scale_x_log10(
-    breaks = trans_breaks("log10", function(x) 10^x),
-    labels = trans_format("log10", math_format(10^.x))
-  ) +
-  labs(title = "Coeficientes del modelo Lasso en función de la regularización") +
-  theme_bw() +
+  ggplot(aes(x = lambda2, y = coeficientes_lasso2, color = predictor)) 
+  labs(title = "Coeficientes del modelo Lasso en función de la regularización")+
   theme(legend.position = "none")
 ```
 
-identificando el número óptimo de componentes del modelo Ridge
 
 ```{r}
 df_coeficientes_ridge2 %>%
@@ -289,6 +277,7 @@ df_coeficientes_ridge2 %>%
 
 identificando el número óptimo de componentes del modelo Lasso
 
+
 ```{r}
 regularizacion2 %>%
   filter(
@@ -297,6 +286,21 @@ regularizacion2 %>%
 ) 
 ```
 
+
+```{r}
+lasso_select <- glmnet::glmnet(x, Y1, lambda = lasso_cv$lambda.1se,  alpha = 1)
+```
+
+```{r}
+plot(lasso_select, xvar = "lambda", label = TRUE)
+```
+
+```{r}
+data.frame(rmse=rmse(pred,Y1))
+```
+
+
+Luego de ejecutar los procesos y modelos a esta base de datos, encontramos que el modelo Lasso luego de la validación cruzada con el lambda optimo es el modelo que mejor ECM tiene, y a su vez este modelo mostro que solo 26 coeficientes o estimadores son suficientes para este modelo. Luego de utilizar el modelo con el lambda óptimo para todas las observaciones encontramos un ECM bajo que es menor al obtenido para las base de entrenamiento y testing.
 
 
 \`\`\`
