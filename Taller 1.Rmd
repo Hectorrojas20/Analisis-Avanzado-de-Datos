@@ -17,31 +17,12 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ```{r}
 library(tidyverse)
-install.packages("ggplot2", repos = "http://cran.us.r-project.org")
-library("ggplot2")
-install.packages("palmerpenguins", repos = "http://cran.us.r-project.org")
-install.packages("weatherData",repos = "http://cran.us.r-project.org")
-library("palmerpenguins") 
+library(ggplot2)
+library(Metrics)
+library(palmerpenguins) 
 library(scales)
 library(corrplot)
-install.packages("pls")
-install.packages("corrr")
-install.packages("skimr")
-install.packages("DataExplorer")
-install.packages("faraway")
-install.packages("ggplot")
-install.packages("ggplot2")
 install.packages("Metrics")
-install.packages("lme4")
-install.packages("plm")
-install.packages("dplyr")
-install.packages("rsq")
-install.packages("glmnet")
-library(Metrics)
-library(lme4)
-library(dplyr)
-library(rsq)
-
 ```
 
 ```{r}
@@ -295,11 +276,12 @@ plot(lasso_select, xvar = "lambda", label = TRUE)
 ```
 calculando el ECM para el modelo con todas las obervacion es usando lasso con lambda optimo:
 ```{r}
-data.frame(rmsE=rmse(pred,Y1))
+x_matrix <- as.matrix(x)
+pred <- predict(lasso_select, newx = x_matrix)
+rmse <- Metrics::rmse(pred, Y1)
+print(rmse)
 ```
-
-
-Luego de ejecutar los procesos y modelos a esta base de datos, encontramos que el modelo Lasso luego de la validación cruzada con el lambda optimo es el modelo que mejor ECM tiene, y a su vez este modelo mostro que solo 26 coeficientes o estimadores son suficientes para este modelo. Luego de utilizar el modelo con el lambda óptimo para todas las observaciones encontramos un ECM bajo que es menor al obtenido para las base de entrenamiento y testing.
+Este error es menor a los replicados anteriormente. Luego de ejecutar los procesos y modelos a esta base de datos, encontramos que el modelo Lasso luego de la validación cruzada con el lambda optimo es el modelo que mejor ECM tiene, y a su vez este modelo mostro que solo 26 coeficientes o estimadores son suficientes para este modelo. Luego de utilizar el modelo con el lambda óptimo para todas las observaciones encontramos un ECM bajo que es menor al obtenido para las base de entrenamiento y testing.
 
 
 \`\`\`
