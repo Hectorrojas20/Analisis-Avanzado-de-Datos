@@ -17,15 +17,13 @@ When you click the **Knit** button a document will be generated that includes bo
 
 ```{r}
 library(tidyverse)
-
-# Gráficos y tratamiento de datos
-# ==============================================================================
-#devtools::install_github("boxuancui/DataExplorer")
+install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+library("ggplot2")
+install.packages("palmerpenguins", repos = "http://cran.us.r-project.org")
+install.packages("weatherData",repos = "http://cran.us.r-project.org")
+library("palmerpenguins") 
 library(scales)
 library(corrplot)
-
-# Modelado
-# ==============================================================================
 install.packages("pls")
 install.packages("corrr")
 install.packages("skimr")
@@ -39,7 +37,6 @@ install.packages("plm")
 install.packages("dplyr")
 install.packages("rsq")
 install.packages("glmnet")
-
 library(Metrics)
 library(lme4)
 library(dplyr)
@@ -49,7 +46,7 @@ library(rsq)
 
 ```{r}
 data <- read.delim2(file="taller1.txt", header=TRUE, sep = ",", dec = ".")
-data
+head(data)
 ```
 
 ```{r}
@@ -291,12 +288,14 @@ regularizacion2 %>%
 lasso_select <- glmnet::glmnet(x, Y1, lambda = lasso_cv$lambda.1se,  alpha = 1)
 ```
 
+gráfico de trazas del modelo seleccionado
+
 ```{r}
 plot(lasso_select, xvar = "lambda", label = TRUE)
 ```
-
+calculando el ECM para el modelo con todas las obervacion es usando lasso con lambda optimo:
 ```{r}
-data.frame(rmse=rmse(pred,Y1))
+data.frame(rmsE=rmse(pred,Y1))
 ```
 
 
